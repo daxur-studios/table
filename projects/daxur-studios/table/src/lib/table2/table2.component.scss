@@ -1,0 +1,22 @@
+:host {
+  //#region HostBinding
+  --itemSize: 0;
+  --itemSizePx: "0px";
+  --tableHeight: 0;
+  --tableHeightPx: "0px";
+  //#endregion
+}
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1;
+  overflow: auto;
+}
+
+mat-table {
+  width: 100%;
+  height: 100%;
+
+  overflow: auto;
+}

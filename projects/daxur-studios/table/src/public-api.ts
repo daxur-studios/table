@@ -3,4 +3,7 @@
  */
 
 export * from './lib/table.service';
-export * from './lib/table.component';
+export * from './lib/table/table.component';
+export * from './lib/table2/table2.component';
+
+export * from './lib/models';

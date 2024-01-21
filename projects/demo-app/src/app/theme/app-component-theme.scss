@@ -1,0 +1,90 @@
+@use "sass:map";
+@use "@angular/material" as mat;
+
+@mixin app-component-theme($theme) {
+  // Get the color config from the theme.
+  $color-config: mat.get-color-config($theme);
+
+  // Get the primary color palette from the color-config.
+  $primaryP: map.get($color-config, "primary");
+  $accentP: map.get($color-config, "accent");
+
+  $backgroundP: map.get($color-config, "background");
+
+  $primary: mat.get-color-from-palette($primaryP);
+  $accent: mat.get-color-from-palette($accentP);
+
+  $background: mat.get-color-from-palette($backgroundP, card);
+
+  .color-primary {
+    color: $primary;
+  }
+  .color-accent {
+    color: $accent;
+  }
+
+  .mat-app-foreground {
+    background: $background;
+  }
+
+  .tooltip-accent {
+    background: $accent;
+    font-size: 1em;
+    border: solid 2px $primary;
+    border-radius: 20px !important;
+
+    color: mat.get-color-from-palette($accentP, default-contrast);
+  }
+
+  .border-accent {
+    border-color: $accent;
+  }
+  .border-primary {
+    border-color: $primary;
+  }
+  /*
+  .magicToolbarActive {
+    background: $accent;
+    border: solid 3px $primary;
+  }
+  .routerLink {
+    color: white;
+  }
+*/
+  .background-primary {
+    @include _palette-styles($primaryP);
+  }
+  .background-accent {
+    @include _palette-styles($accentP);
+  }
+
+  .background-primary-lighter {
+    @include _palette-styles($primaryP);
+  }
+  .background-accent-lighter {
+    @include _palette-styles($accentP);
+  }
+
+  .colorContrastPrimary {
+    color: mat.get-color-from-palette($primaryP, default-contrast);
+  }
+  .colorContrastAccent {
+    color: mat.get-color-from-palette($accentP, default-contrast);
+  }
+
+  .svg-background-primary {
+    fill: $primary;
+  }
+  .svg-background-accent {
+    fill: $accent;
+  }
+}
+
+@mixin _palette-styles($palette) {
+  background: mat.get-color-from-palette($palette);
+  color: mat.get-color-from-palette($palette, default-contrast);
+}
+@mixin _palette-styles-lighter($palette) {
+  background: mat.get-color-from-palette($palette);
+  color: mat.get-color-from-palette($palette, default-contrast);
+}

@@ -1,0 +1,47 @@
+// Custom Theming for Angular Material
+// For more information: https://material.angular.io/guide/theming
+@use "@angular/material" as mat;
+// Plus imports for other components in your app.
+
+@include mat.core();
+
+// Include theme styles for core and each component used in your app.
+// Alternatively, you can import and @include the theme mixins for each component
+// that you are using.
+
+// $custom-typography: mat-typography-config(
+//   $font-family: "Exo 2, sans-serif",
+// );
+
+@import "./dark-theme.scss";
+@import "./light-theme.scss";
+@import "./app-component-theme.scss";
+/*
+@import "../shared-modules/daxurian-editor/components/inputs/stage-input/stage-input.component.scss";
+@import "../styles/appForm.scss";
+*/
+
+@mixin custom-components-theme($theme) {
+  @include app-component-theme($theme);
+  /* @include app-component-theme($theme);
+  @include app-form-theme($theme);
+  @include stage-input($theme);*/
+}
+
+@include mat.all-component-themes($light-theme);
+
+.app-light-theme {
+  // @include mat.all-component-colors($light-theme);
+  @include custom-components-theme($light-theme);
+}
+
+.app-dark-theme {
+  @include mat.all-component-colors($dark-theme);
+  @include custom-components-theme($dark-theme);
+  color-scheme: dark;
+
+  .mat-toolbar.mat-primary {
+    background: #212121;
+    color: white;
+  }
+}

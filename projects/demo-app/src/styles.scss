@@ -1,1 +1,17 @@
-/* You can add global styles to this file, and also import other style files */
+//#region Angular Material Custom Theming
+@import url("./app/theme/theme.scss");
+//#endregion
+
+body,
+html {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+.flex-page {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1 1;
+  overflow: auto;
+}

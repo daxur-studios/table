@@ -1,0 +1,22 @@
+@use "@angular/material" as mat;
+
+//LIGHT THEME
+$light-primary: mat.define-palette(mat.$grey-palette, 100, 500);
+$light-accent: mat.define-palette(mat.$amber-palette, A200, A100, A400);
+$light-warn: mat.define-palette(mat.$red-palette);
+
+$typography: mat.define-typography-config(
+  $font-family: "Exo 2, sans-serif",
+);
+
+$light-theme: mat.define-light-theme(
+  (
+    color: (
+      primary: $light-primary,
+      accent: $light-accent,
+      warn: $light-warn,
+    ),
+    typography: $typography,
+    density: 0,
+  )
+);
