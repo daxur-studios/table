@@ -1,7 +1,7 @@
 <div style="display: flex; flex-direction: column; flex: 1 1" #resizeWrapper>
   <!--Column Header-->
   <div class="base-row header-row">
-    @for (column of controller().options.columns(); track $index) {
+    @for (column of controller().options.columns; track $index) {
     <div class="base-cell">{{column.columnLabel}}</div>
     }
   </div>
@@ -25,7 +25,7 @@
       [class.alternate]="odd"
       class="base-row"
     >
-      @for (column of controller().options.columns(); track $index) {
+      @for (column of controller().options.columns; track $index) {
       <div class="base-cell">{{row[column.propertyPath]}}</div>
       }
       <!-- <div class="example-item-detail">Index: {{index}}</div>

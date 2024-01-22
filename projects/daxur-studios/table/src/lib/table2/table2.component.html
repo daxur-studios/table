@@ -2,22 +2,20 @@
 
 <mat-table
   #table
-  [dataSource]="visibleRows"
+  [dataSource]="visibleRows()"
   class="mat-elevation-z8"
   [trackBy]="trackBy"
   (scroll)="onScroll($event)"
   matSort
-  (matSortChange)="onSortChange($event)"
 >
   @for (column of columns; track column) {
-  <ng-container [matColumnDef]="column.columnDef">
+  <ng-container [matColumnDef]="matColumnDefOf(column)">
     <mat-header-cell *matHeaderCellDef mat-sort-header>
-      {{ column.header }}
+      {{ column.columnLabel }}
     </mat-header-cell>
 
     <mat-cell *matCellDef="let row">
       {{ column.cell(row) }}
-      <input />
     </mat-cell>
   </ng-container>
   }
@@ -25,14 +23,21 @@
   <mat-header-row
     *matHeaderRowDef="displayedColumns; sticky: true"
   ></mat-header-row>
+
   <mat-row
-    mat-row
     *matRowDef="let row; let i = index; columns: displayedColumns"
     [ngStyle]="{
-        height: 'var(--itemSizePx)',
-        transform: 'translate3d(0px, ' +( indexOf(row) * itemSize - (i * itemSize) ) + 'px, 0px)',
+      height: 'var(--itemSizePx)',
+      transform:
+        'translate3d(0px, ' +
+        (sortedDataIndexOf(row) * itemSize - i * itemSize) +
+        'px, 0px)'
     }"
   ></mat-row>
+  <!-- 
+            transform: 'translate3d(0px, ' +( dynamicRowOffset.get(i)! - (i * itemSize) ) + 'px, 0px)',
+  transform: 'translate3d(0px, ' +( indexOf(row) * itemSize - (i * itemSize) ) + 'px, 0px)',
+ -->
 
   <!-- Row shown when there is no matching data. -->
   <tr class="mat-row" *matNoDataRow>
@@ -41,3 +46,4 @@
     </td>
   </tr>
 </mat-table>
+<div>Count: {{ sortedData.length }}</div>

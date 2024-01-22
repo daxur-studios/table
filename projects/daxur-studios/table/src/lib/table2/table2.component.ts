@@ -1,11 +1,18 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   HostBinding,
+  Injector,
+  Input,
   OnInit,
+  TemplateRef,
   ViewChild,
+  WritableSignal,
+  effect,
+  signal,
 } from '@angular/core';
 import {
   MatTable,
@@ -13,35 +20,45 @@ import {
   MatTableModule,
 } from '@angular/material/table';
 import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
+import {
+  ITableColumn,
+  ITableOptions,
+  TableController,
+  VariableRowHeightController,
+} from '../models';
+import { FormGroup } from '@angular/forms';
 
-export interface PeriodicElement {
-  id: string;
-  name: string;
-  position: number;
-  weight: number;
-  symbol: string;
-  visible?: boolean;
-}
+// export interface PeriodicElement {
+//   id: string;
+//   name: string;
+//   position: number;
+//   weight: number;
+//   symbol: string;
+//   rowHeight: number;
+//   visible?: boolean;
+// }
 
-const ELEMENT_DATA: PeriodicElement[] = [];
+// const ELEMENT_DATA: PeriodicElement[] = [];
 
-const abc = 'abcdefghijklmnopqrstuvwxyz';
-// 440000
-for (let i = 0; i < 100000; i++) {
-  ELEMENT_DATA.push({
-    id: 'id' + i.toString(),
-    position: i,
-    name: `Element ${i}` + abc[i % abc.length] + abc[(i + i) % abc.length],
-    weight: i * 100,
-    symbol: 'X' + i,
-    visible: false,
-  });
-}
+// const abc = 'abcdefghijklmnopqrstuvwxyz';
+// // 440000
+// for (let i = 0; i < 100000; i++) {
+//   ELEMENT_DATA.push({
+//     id: 'id' + i.toString(),
+//     position: i,
+//     name: `Element ${i}` + abc[i % abc.length] + abc[(i + i) % abc.length],
+//     weight: i * 100,
+//     symbol: 'X' + i,
+//     rowHeight: 50,
+//     // rowHeight: 50 + (i % 3) ? 50 : 0,
+//     visible: false,
+//   });
+// }
 
-ELEMENT_DATA.at(0)!.visible = true;
+// ELEMENT_DATA.at(0)!.visible = true;
 
-ELEMENT_DATA.at(500)!.visible = true;
-ELEMENT_DATA.at(-1)!.visible = true;
+// ELEMENT_DATA.at(500)!.visible = true;
+// ELEMENT_DATA.at(-1)!.visible = true;
 
 @Component({
   selector: 'lib-table2',
@@ -50,7 +67,17 @@ ELEMENT_DATA.at(-1)!.visible = true;
   templateUrl: './table2.component.html',
   styleUrl: './table2.component.scss',
 })
-export class Table2Component implements OnInit, AfterViewInit {
+export class Table2Component<T extends Object, G extends FormGroup = any>
+  implements OnInit, AfterViewInit
+{
+  @Input({ required: true }) controller?: WritableSignal<TableController<T, G>>;
+
+  /** Cell Templates by `propertyPath` */
+  @Input() templates?: {
+    [v in keyof T]?: TemplateRef<unknown>;
+  };
+
+  //#region Host Binding CSS Variables
   @HostBinding('style.--itemSize') itemSize = 50;
   @HostBinding('style.--itemSizePx') get itemSizePx() {
     return `${this.itemSize}px`;
@@ -62,85 +89,99 @@ export class Table2Component implements OnInit, AfterViewInit {
   @HostBinding('style.--tableHeightPx') get tableHeightPx() {
     return `${this.tableHeight}px`;
   }
+  //#endregion
 
   @ViewChild(MatTable, { static: true, read: ElementRef })
   matTable!: ElementRef<HTMLDivElement>;
 
   @ViewChild(MatSort, { static: true }) sort?: MatSort;
 
-  readonly variableRowHeight = new Map<number, number>();
-
-  columns = [
-    {
-      columnDef: 'position',
-      header: 'No.',
-      cell: (element: PeriodicElement) => `${element.position}`,
-    },
-    {
-      columnDef: 'name',
-      header: 'Name',
-      cell: (element: PeriodicElement) => `${element.name}`,
-    },
-    {
-      columnDef: 'weight',
-      header: 'Weight',
-      cell: (element: PeriodicElement) => `${element.weight}`,
-    },
-    {
-      columnDef: 'symbol',
-      header: 'Symbol',
-      cell: (element: PeriodicElement) => `${element.symbol}`,
-    },
-  ];
-  dataSource: MatTableDataSource<PeriodicElement> = new MatTableDataSource(
-    ELEMENT_DATA
-  );
-
-  get visibleRows() {
-    // return this.dataSource
-    //   .sortData(this.dataSource.filteredData, this.dataSource.sort)
-    //   .filter((row) => row.visible);
-    return this.renderedData.filter((row) => row.visible);
-
-    return this.dataSource.filteredData.filter((row) => row.visible);
+  get columns(): ITableColumn<T>[] {
+    return this.controller?.().options.columns || [];
   }
-  displayedColumns = this.columns.map((c) => c.columnDef);
-
-  public indexOf(row: PeriodicElement) {
-    return this.renderedData.indexOf(row);
+  // columns = [
+  //   {
+  //     columnDef: 'position',
+  //     header: 'No.',
+  //     cell: (element: PeriodicElement) => `${element.position}`,
+  //   },
+  //   {
+  //     columnDef: 'name',
+  //     header: 'Name',
+  //     cell: (element: PeriodicElement) => `${element.name}`,
+  //   },
+  //   {
+  //     columnDef: 'weight',
+  //     header: 'Weight',
+  //     cell: (element: PeriodicElement) => `${element.weight}`,
+  //   },
+  //   {
+  //     columnDef: 'symbol',
+  //     header: 'Symbol',
+  //     cell: (element: PeriodicElement) => `${element.symbol}`,
+  //   },
+  // ];
+  get displayedColumns() {
+    return this.columns.map((c) => c.propertyPath);
   }
 
-  constructor() {}
+  dataSource: MatTableDataSource<T> = new MatTableDataSource<T>([]);
 
-  renderedData: PeriodicElement[] = [];
+  sortedData: T[] = [];
+  readonly visibleRows: WritableSignal<T[]> = signal([]);
+
+  public sortedDataIndexOf(row: T) {
+    return this.sortedData.indexOf(row);
+  }
+
+  public matColumnDefOf(column: ITableColumn<T>) {
+    return String(column.propertyPath);
+  }
+
+  constructor(private readonly injector: Injector) {}
+
+  readonly variableRowHeightController = new VariableRowHeightController(this);
 
   ngOnInit(): void {
-    this.dataSource
-      .connect()
-      .subscribe(
-        (d) => (this.renderedData = d) && console.debug(this.renderedData)
-      );
+    effect(
+      () => {
+        this.dataSource.data = this.controller!().options.data();
+        console.warn('SET DATA NOW');
+        this.recalculateVisibleRows();
+      },
+      { injector: this.injector, allowSignalWrites: true }
+    );
+
+    this.dataSource.connect().subscribe((renderedData) => {
+      this.sortedData = renderedData;
+
+      // this.updateVisibleRows();
+      this.recalculateVisibleRows();
+
+      this.variableRowHeightController.calculateRowHeights();
+    });
 
     console.warn('Table2Component.ngOnInit()', this.matTable);
     this.recalculateVisibleRows();
   }
-  ngAfterViewInit() {
-    this.dataSource.filterPredicate = (data, filter) => {
-      if (!filter) {
-        return true;
-      }
 
-      return [
-        data?.name?.toLowerCase().includes(filter),
-        data?.symbol?.toLowerCase().includes(filter),
-      ].some((x) => x);
-    };
+  ngAfterViewInit() {
+    this.dataSource.filterPredicate =
+      this.options?.filterPredicate ?? (() => true);
 
     this.dataSource.sort = this.sort!;
+
+    this.sort!.sortChange.subscribe((event) => {
+      this.onSortChange(event);
+    });
   }
 
-  trackBy(index: number, row: PeriodicElement) {
-    return row.id;
+  get options() {
+    return this.controller?.().options;
+  }
+
+  trackBy(index: number, row: T) {
+    return this.options?.trackBy?.(row) ?? index;
   }
 
   onScroll(event: Event) {
@@ -159,23 +200,34 @@ export class Table2Component implements OnInit, AfterViewInit {
     );
 
     // Set all rows to invisible
-    for (let i = 0; i < this.dataSource.data.length; i++) {
-      this.dataSource.data[i].visible = false;
-    }
+    // for (let i = 0; i < this.dataSource.data.length; i++) {
+    //   this.dataSource.data[i].visible = false;
+    // }
+    const visibleRows: T[] = [];
 
     // Set the visible rows to visible
     for (let i = firstVisibleRowIndex; i < lastVisibleRowIndex; i++) {
-      const x = this.renderedData[i];
+      const x = this.sortedData[i];
       if (x) {
-        x.visible = true;
+        visibleRows.push(x);
+        // x.visible = true;
       }
     }
 
     // Set the last row to be visible in order to make the table scrollable
-    if (this.renderedData.length > 0) {
-      this.renderedData.at(-1)!.visible = true;
+    if (this.sortedData.length > 0) {
+      // this.sortedData.at(-1)!.visible = true;
+      visibleRows.push(this.sortedData.at(-1)!);
     }
+
+    this.visibleRows.set(visibleRows);
+
+    console.warn('VISIBLE ROWS', this.visibleRows);
+    // this.updateVisibleRows();
   }
+  // updateVisibleRows() {
+  //   this.visibleRows = this.sortedData.filter((row) => row.visible);
+  // }
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
@@ -186,35 +238,7 @@ export class Table2Component implements OnInit, AfterViewInit {
     console.warn('Table2Component.applyFilter()', this.dataSource);
   }
 
-  private currentSort: Sort | null = null;
   onSortChange(event: Sort) {
-    console.debug('Table2Component.onSortChange()', event);
-    this.currentSort = event;
-    setTimeout(() => {
-      this.recalculateVisibleRows();
-    }, 0);
-    // this.dataSource.sortData = (
-    //   filteredData: PeriodicElement[],
-    //   sort: MatSort
-    // ) => {
-    //   return filteredData.sort((a: PeriodicElement, b: PeriodicElement) => {
-    //     const isAsc = sort.direction === 'asc';
-
-    //     switch (sort.active as keyof PeriodicElement) {
-    //       case 'name':
-    //         return a.name.localeCompare(b.name) * (isAsc ? 1 : -1);
-    //       case 'position':
-    //         return isAsc ? a.position - b.position : b.position - a.position;
-    //       case 'weight':
-    //         return isAsc ? a.weight - b.weight : b.weight - a.weight;
-    //       case 'symbol':
-    //         return isAsc
-    //           ? a.symbol.localeCompare(b.symbol)
-    //           : b.symbol.localeCompare(a.symbol);
-    //       default:
-    //         return 0;
-    //     }
-    //   });
-    // };
+    this.recalculateVisibleRows();
   }
 }

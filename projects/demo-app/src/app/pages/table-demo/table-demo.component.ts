@@ -19,77 +19,93 @@ export class TableDemoComponent {
     name: new FormControl(null),
   });
 
+  show: 'basic' | 'advanced' = 'basic';
+
+  //#region Table Controllers
   readonly controller = signal(
     new TableController<IDemoTableData, IDemoTableFilterFormGroup>({
       data: this.data,
       filterFormGroup: this.filterFormGroup,
-      columns: signal([
+      trackBy: (row) => row.id,
+      filterPredicate: (row, filter) => {
+        return row.name.includes(filter);
+      },
+      columns: [
         {
           propertyPath: 'name',
           columnLabel: 'Name',
+          cell: (row) => row.name,
         },
         {
           propertyPath: 'description',
           columnLabel: 'Description',
+          cell: (row) => row.description,
         },
         {
           propertyPath: 'isActive',
           columnLabel: 'Active',
+          cell: (row) => row.isActive,
         },
         {
           propertyPath: 'date',
           columnLabel: 'Date',
+          cell: (row) => row.date,
         },
         {
           propertyPath: 'stringArray',
           columnLabel: 'String Array',
+          cell: (row) => row.stringArray.join(', '),
         },
         {
           propertyPath: 'numberArray',
           columnLabel: 'Number Array',
+          cell: (row) => row.numberArray.join(', '),
         },
         {
           propertyPath: 'objectArray',
           columnLabel: 'Object Array',
+          cell: (row) => row.objectArray.map((o) => o.name).join(', '),
         },
-      ]),
+      ],
     })
   );
 
+  readonly advancedController = signal(
+    new TableController<IDemoTableData, IDemoTableFilterFormGroup>({
+      columns: [
+        {
+          propertyPath: 'name',
+          columnLabel: 'Name',
+          cell: (row) => row.name,
+        },
+        {
+          propertyPath: 'numberArray',
+          columnLabel: 'Number Array',
+          cell: (row) => row.numberArray.join('\n'),
+        },
+      ],
+      data: this.data,
+      filterFormGroup: this.filterFormGroup,
+      trackBy: (row) => row.id,
+      filterPredicate: (row, filter) => {
+        return row.id.toString().includes(filter);
+      },
+      getRowHeight: (row) => {
+        return row.numberArray.length * 50 || 50;
+      },
+    })
+  );
+  //#endregion
+
   constructor() {
     // Add 1 Million rows of data
+    this.initBasicDemo();
+  }
 
-    //#region Helper Functions
-    function randomNumber(i: number) {
-      return Math.floor(Math.random() * (10 + i));
-    }
-
-    function randomDate(i: number) {
-      const today = new Date();
-      const futureDate = new Date(today);
-      futureDate.setDate(today.getDate() + randomNumber(i));
-      return futureDate;
-    }
-
-    function randomString(i: number) {
-      const characters =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let result = '';
-      const charactersLength = characters.length;
-      for (let i = 0; i < 10; i++) {
-        result += characters.charAt(
-          Math.floor(Math.random() * charactersLength)
-        );
-      }
-      return result;
-    }
-    function randomBoolean(i: number) {
-      return i % 2 === 0;
-    }
-    //#endregion
-
+  initBasicDemo() {
+    this.show = 'basic';
     const data: IDemoTableData[] = [];
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 1000; i++) {
       data.push({
         id: i,
         name: `Name ${i}`,
@@ -97,7 +113,39 @@ export class TableDemoComponent {
         isActive: randomBoolean(i),
         date: randomDate(i),
         stringArray: [randomString(i), randomString(i), randomString(i)],
-        numberArray: [randomNumber(i), randomNumber(i), randomNumber(i)],
+        numberArray: Array.from({ length: randomNumber(i) }, () =>
+          randomNumber(i)
+        ),
+        objectArray: [
+          { id: i, name: randomString(i) },
+          { id: randomNumber(i), name: randomString(i) },
+          { id: randomNumber(i), name: randomString(i) },
+        ],
+        object: { id: randomNumber(i), name: randomString(i - 1) },
+        nestedObject: {
+          id: randomNumber(i + 2),
+          name: randomString(i + 1),
+          useThis: { id: randomNumber(i + 4), name: randomString(i + 3) },
+        },
+      });
+    }
+
+    this.data.set(data);
+  }
+  initAdvancedDemo() {
+    this.show = 'advanced';
+    const data: IDemoTableData[] = [];
+    for (let i = 0; i < 10000; i++) {
+      data.push({
+        id: i,
+        name: `Name ${i}`,
+        description: `Description ${i}`,
+        isActive: randomBoolean(i),
+        date: randomDate(i),
+        stringArray: [randomString(i), randomString(i), randomString(i)],
+        numberArray: Array.from({ length: randomNumber(i) }, () =>
+          randomNumber(i)
+        ),
         objectArray: [
           { id: i, name: randomString(i) },
           { id: randomNumber(i), name: randomString(i) },
@@ -146,3 +194,30 @@ interface IDemoTableFilterControls {
   name: FormControl<string | null>;
 }
 type IDemoTableFilterFormGroup = FormGroup<IDemoTableFilterControls>;
+
+//#region Helper Functions
+function randomNumber(i: number) {
+  return Math.floor(Math.random() * 10);
+}
+
+function randomDate(i: number) {
+  const today = new Date();
+  const futureDate = new Date(today);
+  futureDate.setDate(today.getDate() + randomNumber(i));
+  return futureDate;
+}
+
+function randomString(i: number) {
+  const characters =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  const charactersLength = characters.length;
+  for (let i = 0; i < 10; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+function randomBoolean(i: number) {
+  return i % 2 === 0;
+}
+//#endregion

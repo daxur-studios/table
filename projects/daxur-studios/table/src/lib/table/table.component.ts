@@ -33,7 +33,7 @@ export class CustomVirtualScrollStrategy extends FixedSizeVirtualScrollStrategy 
   templateUrl: './table.html',
   styleUrl: './table.scss',
 })
-export class TableComponent<T, G extends FormGroup>
+export class TableComponent<T extends Object, G extends FormGroup>
   implements OnInit, OnDestroy
 {
   @HostBinding('style.--itemSize') itemSize = 50;
@@ -41,7 +41,7 @@ export class TableComponent<T, G extends FormGroup>
     return `${this.itemSize}px`;
   }
   @HostBinding('style.--baseCellWidth') get baseCellWidth() {
-    return `${100 / this.controller().options.columns().length}%`;
+    return `${100 / this.controller().options.columns.length}%`;
   }
 
   @ViewChild('resizeWrapper', { static: true })

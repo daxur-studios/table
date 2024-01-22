@@ -1,3 +1,16 @@
-<p>table-demo works!</p>
-<lib-table2></lib-table2>
+<div>
+  <button (click)="initBasicDemo()">Basic Demo</button>
+  <button (click)="initAdvancedDemo()">Advanced Demo</button>
+</div>
+
+@switch (show) { @case ('basic') {
+<lib-table2 [controller]="controller"></lib-table2>
+} @case ('advanced') {
+<lib-table2
+  style="max-height: 70%; max-width: 70%"
+  [controller]="advancedController"
+></lib-table2>
+} @default {
+<div>Choose</div>
+} }
 <!-- <lib-table [controller]="controller"></lib-table> -->
