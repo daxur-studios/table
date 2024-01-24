@@ -7,7 +7,7 @@ export class VariableRowHeightController<T extends Object> {
   constructor(readonly table: Table2Component<T>) {}
 
   public calculateRowHeights() {
-    this.lastRowOffset = this.table.sortedData.reduce((acc, row) => {
+    this.lastRowOffset = this.table.sortedData().reduce((acc, row) => {
       return acc + (this.table.options?.getRowHeight?.(row) ?? 0);
       // row.rowHeight = acc;
       // return acc + row.rowHeight;

@@ -20,3 +20,16 @@ mat-table {
 
   overflow: auto;
 }
+
+.filter-button {
+  --mdc-icon-button-state-layer-size: 25px;
+  padding: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+mat-header-cell:hover .filter-button {
+  opacity: 0.8;
+}

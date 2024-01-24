@@ -27,43 +27,23 @@ import {
   VariableRowHeightController,
 } from '../models';
 import { FormGroup } from '@angular/forms';
-
-// export interface PeriodicElement {
-//   id: string;
-//   name: string;
-//   position: number;
-//   weight: number;
-//   symbol: string;
-//   rowHeight: number;
-//   visible?: boolean;
-// }
-
-// const ELEMENT_DATA: PeriodicElement[] = [];
-
-// const abc = 'abcdefghijklmnopqrstuvwxyz';
-// // 440000
-// for (let i = 0; i < 100000; i++) {
-//   ELEMENT_DATA.push({
-//     id: 'id' + i.toString(),
-//     position: i,
-//     name: `Element ${i}` + abc[i % abc.length] + abc[(i + i) % abc.length],
-//     weight: i * 100,
-//     symbol: 'X' + i,
-//     rowHeight: 50,
-//     // rowHeight: 50 + (i % 3) ? 50 : 0,
-//     visible: false,
-//   });
-// }
-
-// ELEMENT_DATA.at(0)!.visible = true;
-
-// ELEMENT_DATA.at(500)!.visible = true;
-// ELEMENT_DATA.at(-1)!.visible = true;
+import { FilterComponent } from '../filter/filter.component';
+import { TableService } from '../table.service';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'lib-table2',
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatSortModule],
+  imports: [
+    CommonModule,
+    MatTableModule,
+    MatSortModule,
+    FilterComponent,
+    MatIconModule,
+    MatButtonModule,
+  ],
+  providers: [TableService],
   templateUrl: './table2.component.html',
   styleUrl: './table2.component.scss',
 })
@@ -78,7 +58,9 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
   };
 
   //#region Host Binding CSS Variables
-  @HostBinding('style.--itemSize') itemSize = 50;
+  @HostBinding('style.--itemSize') get itemSize() {
+    return this.tableService.itemSize;
+  }
   @HostBinding('style.--itemSizePx') get itemSizePx() {
     return `${this.itemSize}px`;
   }
@@ -92,57 +74,44 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
   //#endregion
 
   @ViewChild(MatTable, { static: true, read: ElementRef })
-  matTable!: ElementRef<HTMLDivElement>;
+  matTableRef!: ElementRef<HTMLDivElement>;
 
   @ViewChild(MatSort, { static: true }) sort?: MatSort;
 
   get columns(): ITableColumn<T>[] {
     return this.controller?.().options.columns || [];
   }
-  // columns = [
-  //   {
-  //     columnDef: 'position',
-  //     header: 'No.',
-  //     cell: (element: PeriodicElement) => `${element.position}`,
-  //   },
-  //   {
-  //     columnDef: 'name',
-  //     header: 'Name',
-  //     cell: (element: PeriodicElement) => `${element.name}`,
-  //   },
-  //   {
-  //     columnDef: 'weight',
-  //     header: 'Weight',
-  //     cell: (element: PeriodicElement) => `${element.weight}`,
-  //   },
-  //   {
-  //     columnDef: 'symbol',
-  //     header: 'Symbol',
-  //     cell: (element: PeriodicElement) => `${element.symbol}`,
-  //   },
-  // ];
+
   get displayedColumns() {
     return this.columns.map((c) => c.propertyPath);
   }
 
-  dataSource: MatTableDataSource<T> = new MatTableDataSource<T>([]);
+  dataSource: MatTableDataSource<T> = this.tableService.dataSource;
 
-  sortedData: T[] = [];
-  readonly visibleRows: WritableSignal<T[]> = signal([]);
+  sortedData: WritableSignal<T[]> = this.tableService.sortedData;
+  readonly visibleRows: WritableSignal<T[]> = this.tableService.visibleRows;
 
   public sortedDataIndexOf(row: T) {
-    return this.sortedData.indexOf(row);
+    return this.sortedData().indexOf(row);
   }
 
   public matColumnDefOf(column: ITableColumn<T>) {
     return String(column.propertyPath);
   }
 
-  constructor(private readonly injector: Injector) {}
+  constructor(
+    private readonly injector: Injector,
+    readonly tableService: TableService<T>
+  ) {}
 
   readonly variableRowHeightController = new VariableRowHeightController(this);
 
+  private recalculateVisibleRows() {
+    this.tableService.recalculateVisibleRows();
+  }
+
   ngOnInit(): void {
+    this.tableService.matTableRef = this.matTableRef;
     effect(
       () => {
         this.dataSource.data = this.controller!().options.data();
@@ -153,7 +122,7 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
     );
 
     this.dataSource.connect().subscribe((renderedData) => {
-      this.sortedData = renderedData;
+      this.sortedData.set(renderedData);
 
       // this.updateVisibleRows();
       this.recalculateVisibleRows();
@@ -161,7 +130,7 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
       this.variableRowHeightController.calculateRowHeights();
     });
 
-    console.warn('Table2Component.ngOnInit()', this.matTable);
+    console.warn('Table2Component.ngOnInit()', this.matTableRef);
     this.recalculateVisibleRows();
   }
 
@@ -188,57 +157,15 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
     this.recalculateVisibleRows();
   }
 
-  private recalculateVisibleRows() {
-    // Calculate the visible rows based on the scroll position and the item size
-    const firstVisibleRowIndex = Math.floor(
-      this.matTable.nativeElement.scrollTop / this.itemSize
-    );
-    const lastVisibleRowIndex = Math.ceil(
-      (this.matTable.nativeElement.scrollTop +
-        this.matTable.nativeElement.clientHeight) /
-        this.itemSize
-    );
-
-    // Set all rows to invisible
-    // for (let i = 0; i < this.dataSource.data.length; i++) {
-    //   this.dataSource.data[i].visible = false;
-    // }
-    const visibleRows: T[] = [];
-
-    // Set the visible rows to visible
-    for (let i = firstVisibleRowIndex; i < lastVisibleRowIndex; i++) {
-      const x = this.sortedData[i];
-      if (x) {
-        visibleRows.push(x);
-        // x.visible = true;
-      }
-    }
-
-    // Set the last row to be visible in order to make the table scrollable
-    if (this.sortedData.length > 0) {
-      // this.sortedData.at(-1)!.visible = true;
-      visibleRows.push(this.sortedData.at(-1)!);
-    }
-
-    this.visibleRows.set(visibleRows);
-
-    console.warn('VISIBLE ROWS', this.visibleRows);
-    // this.updateVisibleRows();
-  }
   // updateVisibleRows() {
   //   this.visibleRows = this.sortedData.filter((row) => row.visible);
   // }
 
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-
-    this.recalculateVisibleRows();
-
-    console.warn('Table2Component.applyFilter()', this.dataSource);
-  }
-
   onSortChange(event: Sort) {
     this.recalculateVisibleRows();
+  }
+
+  addFilter(column: ITableColumn<T>, event?: MouseEvent) {
+    this.tableService.addFilter(column, event);
   }
 }

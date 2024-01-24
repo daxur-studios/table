@@ -49,7 +49,7 @@ export class TableDemoComponent {
         {
           propertyPath: 'date',
           columnLabel: 'Date',
-          cell: (row) => row.date,
+          cell: (row) => row.date.toISOString(),
         },
         {
           propertyPath: 'stringArray',

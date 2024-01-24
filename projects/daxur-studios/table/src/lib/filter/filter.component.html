@@ -1,0 +1,10 @@
+<mat-form-field class="hide-subscript">
+  <mat-icon matPrefix>search</mat-icon>
+  <mat-label>Filter</mat-label>
+  <input
+    matInput
+    placeholder="Ex. Mia"
+    #filterInputRef
+    [formControl]="filterControl"
+  />
+</mat-form-field>

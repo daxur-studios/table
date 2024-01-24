@@ -1,5 +1,4 @@
-<input matInput (keyup)="applyFilter($event)" placeholder="Ex. Mia" #input />
-
+<lib-filter></lib-filter>
 <mat-table
   #table
   [dataSource]="visibleRows()"
@@ -12,6 +11,13 @@
   <ng-container [matColumnDef]="matColumnDefOf(column)">
     <mat-header-cell *matHeaderCellDef mat-sort-header>
       {{ column.columnLabel }}
+      <button
+        mat-icon-button
+        class="filter-button"
+        (click)="addFilter(column, $event)"
+      >
+        <mat-icon>filter_alt</mat-icon>
+      </button>
     </mat-header-cell>
 
     <mat-cell *matCellDef="let row">

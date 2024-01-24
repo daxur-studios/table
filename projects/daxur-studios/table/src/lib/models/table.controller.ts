@@ -21,7 +21,7 @@ export interface ITableOptions<T extends Object, G extends FormGroup> {
 
 export interface ITableColumn<T extends Object> {
   propertyPath: keyof T;
-  columnLabel?: string;
+  columnLabel: string;
 
   cell: (row: T) => string | number | boolean | Date | string[] | number[];
 }
