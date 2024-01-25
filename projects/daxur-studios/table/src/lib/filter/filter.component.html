@@ -1,10 +1,76 @@
-<mat-form-field class="hide-subscript">
+<mat-form-field class="hide-subscript" style="width: 500px">
+  @if (!formControl.value){
   <mat-icon matPrefix>search</mat-icon>
+  }@else{
+  <mat-icon
+    matPrefix
+    (click)="formControl.reset()"
+    matTooltip="Clear Filters"
+    style="cursor: pointer"
+    >close</mat-icon
+  >
+  }
+
   <mat-label>Filter</mat-label>
-  <input
+  <textarea
     matInput
     placeholder="Ex. Mia"
     #filterInputRef
-    [formControl]="filterControl"
+    [formControl]="formControl"
+    cdkTextareaAutosize
+    #autosize="cdkTextareaAutosize"
+    cdkAutosizeMinRows="1"
+    cdkAutosizeMaxRows="10"
+  ></textarea>
+</mat-form-field>
+
+<mat-form-field style="width: 100%">
+  <mat-label>Favorite Fruits</mat-label>
+  <mat-chip-grid #OR_ChipGrid>
+    @for (OR_Filter of parsedFilters(); track OR_Filter) {
+    <mat-chip-row (removed)="remove(OR_Filter)">
+      <div class="AND_Filters">
+        @for (AND_Filter of OR_Filter; track AND_Filter) {
+        <span>
+          <select [value]="AND_Filter.label">
+            @for (column of options?.columns; track column.propertyPath) {
+            <option [value]="column.columnLabel">
+              {{ column.columnLabel }}
+            </option>
+            }
+          </select>
+          : @for (value of AND_Filter.values; track $index) {
+          <input
+            type="text"
+            [value]="value"
+            [ngStyle]="{ width: value.length + 1 + 'ch' }"
+          />
+          }
+          <button mat-icon-button (click)="addORValue(AND_Filter)">
+            <mat-icon>add</mat-icon>
+          </button>
+        </span>
+        }
+
+        <button mat-icon-button (click)="addANDFilter(OR_Filter)">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+
+      {{ OR_Filter }}
+      <button matChipRemove>
+        <mat-icon>cancel</mat-icon>
+      </button>
+    </mat-chip-row>
+    }
+    <button mat-button (click)="addORFilter()">OR</button>
+  </mat-chip-grid>
+  <input
+    placeholder="New Fruit..."
+    #OR_FilterInput
+    [formControl]="OR_FilterCtrl"
+    [matChipInputFor]="OR_ChipGrid"
+    [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+    (matChipInputTokenEnd)="add($event)"
   />
 </mat-form-field>

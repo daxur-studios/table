@@ -23,17 +23,17 @@ import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import {
   ITableColumn,
   ITableOptions,
-  TableController,
   VariableRowHeightController,
 } from '../models';
 import { FormGroup } from '@angular/forms';
 import { FilterComponent } from '../filter/filter.component';
-import { TableService } from '../table.service';
+import { TableService } from '../services/table.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { FiltersService } from '../services';
 
 @Component({
-  selector: 'lib-table2',
+  selector: 'lib-table',
   standalone: true,
   imports: [
     CommonModule,
@@ -43,14 +43,12 @@ import { MatButtonModule } from '@angular/material/button';
     MatIconModule,
     MatButtonModule,
   ],
-  providers: [TableService],
+  providers: [TableService, FiltersService],
   templateUrl: './table2.component.html',
   styleUrl: './table2.component.scss',
 })
-export class Table2Component<T extends Object, G extends FormGroup = any>
-  implements OnInit, AfterViewInit
-{
-  @Input({ required: true }) controller?: WritableSignal<TableController<T, G>>;
+export class TableComponent<T extends Object> implements OnInit, AfterViewInit {
+  @Input({ required: true }) options!: WritableSignal<ITableOptions<T>>;
 
   /** Cell Templates by `propertyPath` */
   @Input() templates?: {
@@ -79,7 +77,7 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
   @ViewChild(MatSort, { static: true }) sort?: MatSort;
 
   get columns(): ITableColumn<T>[] {
-    return this.controller?.().options.columns || [];
+    return this.options().columns || [];
   }
 
   get displayedColumns() {
@@ -101,8 +99,11 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
 
   constructor(
     private readonly injector: Injector,
-    readonly tableService: TableService<T>
-  ) {}
+    readonly tableService: TableService<T>,
+    readonly filtersService: FiltersService<T>
+  ) {
+    this.tableService.tableComponent = this;
+  }
 
   readonly variableRowHeightController = new VariableRowHeightController(this);
 
@@ -112,9 +113,11 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
 
   ngOnInit(): void {
     this.tableService.matTableRef = this.matTableRef;
+    this.filtersService.options = this.options;
+
     effect(
       () => {
-        this.dataSource.data = this.controller!().options.data();
+        this.dataSource.data = this.options().data();
         console.warn('SET DATA NOW');
         this.recalculateVisibleRows();
       },
@@ -135,8 +138,13 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
   }
 
   ngAfterViewInit() {
-    this.dataSource.filterPredicate =
-      this.options?.filterPredicate ?? (() => true);
+    const options = this.options();
+    if (options.filterPredicate) {
+      this.dataSource.filterPredicate = options.filterPredicate;
+    } else {
+      this.dataSource.filterPredicate =
+        this.filtersService.filterPredicateAdvanced;
+    }
 
     this.dataSource.sort = this.sort!;
 
@@ -145,12 +153,8 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
     });
   }
 
-  get options() {
-    return this.controller?.().options;
-  }
-
   trackBy(index: number, row: T) {
-    return this.options?.trackBy?.(row) ?? index;
+    return this.options?.()?.trackBy?.(row) ?? index;
   }
 
   onScroll(event: Event) {
@@ -166,6 +170,6 @@ export class Table2Component<T extends Object, G extends FormGroup = any>
   }
 
   addFilter(column: ITableColumn<T>, event?: MouseEvent) {
-    this.tableService.addFilter(column, event);
+    this.filtersService.addFilter(column, event);
   }
 }

@@ -4,12 +4,12 @@
 </div>
 
 @switch (show) { @case ('basic') {
-<lib-table2 [controller]="controller"></lib-table2>
+<lib-table [options]="options"></lib-table>
 } @case ('advanced') {
-<lib-table2
+<lib-table
   style="max-height: 70%; max-width: 70%"
-  [controller]="advancedController"
-></lib-table2>
+  [options]="advancedOptions"
+></lib-table>
 } @default {
 <div>Choose</div>
 } }

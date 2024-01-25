@@ -1,31 +1,32 @@
 import { ElementRef, Injectable, WritableSignal, signal } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
-import { ITableColumn } from './models';
+import { ITableColumn, OR_Filters, TableFilterController } from '../models';
 import { FormControl } from '@angular/forms';
+import type { TableComponent } from '../table2/table2.component';
 
 /** New Instance Per Table Component */
 @Injectable()
 export class TableService<T extends Object> {
+  //#region Data
   readonly dataSource = new MatTableDataSource<T>([]);
   readonly sortedData: WritableSignal<T[]> = signal([]);
   readonly visibleRows: WritableSignal<T[]> = signal([]);
-
-  readonly filterControl = new FormControl<string | null>(null);
+  //#endregion
 
   public itemSize = 50;
   /** Set at ngOnInit of the TableComponent */
   matTableRef?: ElementRef<HTMLDivElement>;
-  filterInputRef?: ElementRef<HTMLInputElement>;
+  tableComponent?: TableComponent<T>;
 
   constructor() {}
 
-  public applyFilter(filterValue: string | null) {
+  public applyFilterToDataSource(filterValue: string | null) {
     if (!filterValue) {
       this.dataSource.filter = '';
       return;
     }
 
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+    this.dataSource.filter = filterValue; //trim().toLowerCase();
 
     this.recalculateVisibleRows();
 
@@ -70,17 +71,6 @@ export class TableService<T extends Object> {
 
     this.visibleRows.set(visibleRows);
 
-    console.warn('VISIBLE ROWS', this.visibleRows);
     // this.updateVisibleRows();
-  }
-
-  addFilter(column: ITableColumn<T>, event?: Event) {
-    this.filterControl.setValue(`${column.columnLabel}: `);
-    if (event) {
-      event.stopPropagation();
-    }
-    if (this.filterInputRef) {
-      this.filterInputRef.nativeElement.focus();
-    }
   }
 }

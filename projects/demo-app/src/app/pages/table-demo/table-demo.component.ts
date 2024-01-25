@@ -1,100 +1,92 @@
 import { Component, WritableSignal, signal } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import {
-  Table2Component,
-  TableComponent,
-  TableController,
-} from '@daxur-studios/table';
+import { TableComponent, ITableOptions } from '@daxur-studios/table';
 
 @Component({
   selector: 'app-table-demo',
   standalone: true,
-  imports: [TableComponent, Table2Component],
+  imports: [TableComponent],
   templateUrl: './table-demo.component.html',
   styleUrl: './table-demo.component.scss',
 })
 export class TableDemoComponent {
   readonly data: WritableSignal<IDemoTableData[]> = signal([]);
-  readonly filterFormGroup = new FormGroup<IDemoTableFilterControls>({
-    name: new FormControl(null),
-  });
 
   show: 'basic' | 'advanced' = 'basic';
 
   //#region Table Controllers
-  readonly controller = signal(
-    new TableController<IDemoTableData, IDemoTableFilterFormGroup>({
-      data: this.data,
-      filterFormGroup: this.filterFormGroup,
-      trackBy: (row) => row.id,
-      filterPredicate: (row, filter) => {
-        return row.name.includes(filter);
+  readonly options = signal<ITableOptions<IDemoTableData>>({
+    data: this.data,
+    trackBy: (row) => row.id,
+    // filterPredicate: (row, filter) => {
+    //   this.options().columns;
+    //   const x = (row: IDemoTableData, filter: string) => {
+    //     return row.name.includes(filter);
+    //   };
+    //   return x(row, filter);
+    // },
+    columns: [
+      {
+        propertyPath: 'name',
+        columnLabel: 'Name',
+        cell: (row) => row.name,
       },
-      columns: [
-        {
-          propertyPath: 'name',
-          columnLabel: 'Name',
-          cell: (row) => row.name,
-        },
-        {
-          propertyPath: 'description',
-          columnLabel: 'Description',
-          cell: (row) => row.description,
-        },
-        {
-          propertyPath: 'isActive',
-          columnLabel: 'Active',
-          cell: (row) => row.isActive,
-        },
-        {
-          propertyPath: 'date',
-          columnLabel: 'Date',
-          cell: (row) => row.date.toISOString(),
-        },
-        {
-          propertyPath: 'stringArray',
-          columnLabel: 'String Array',
-          cell: (row) => row.stringArray.join(', '),
-        },
-        {
-          propertyPath: 'numberArray',
-          columnLabel: 'Number Array',
-          cell: (row) => row.numberArray.join(', '),
-        },
-        {
-          propertyPath: 'objectArray',
-          columnLabel: 'Object Array',
-          cell: (row) => row.objectArray.map((o) => o.name).join(', '),
-        },
-      ],
-    })
-  );
+      {
+        propertyPath: 'description',
+        columnLabel: 'Description',
+        cell: (row) => row.description,
+      },
+      {
+        propertyPath: 'isActive',
+        columnLabel: 'Active',
+        cell: (row) => row.isActive,
+      },
+      {
+        propertyPath: 'date',
+        columnLabel: 'Date',
+        cell: (row) => row.date.toISOString(),
+      },
+      {
+        propertyPath: 'stringArray',
+        columnLabel: 'String Array',
+        cell: (row) => row.stringArray.join(', '),
+      },
+      {
+        propertyPath: 'numberArray',
+        columnLabel: 'Number Array',
+        cell: (row) => row.numberArray.join(', '),
+      },
+      {
+        propertyPath: 'objectArray',
+        columnLabel: 'Object Array',
+        cell: (row) => row.objectArray.map((o) => o.name).join(', '),
+      },
+    ],
+  });
 
-  readonly advancedController = signal(
-    new TableController<IDemoTableData, IDemoTableFilterFormGroup>({
-      columns: [
-        {
-          propertyPath: 'name',
-          columnLabel: 'Name',
-          cell: (row) => row.name,
-        },
-        {
-          propertyPath: 'numberArray',
-          columnLabel: 'Number Array',
-          cell: (row) => row.numberArray.join('\n'),
-        },
-      ],
-      data: this.data,
-      filterFormGroup: this.filterFormGroup,
-      trackBy: (row) => row.id,
-      filterPredicate: (row, filter) => {
-        return row.id.toString().includes(filter);
+  readonly advancedOptions = signal<ITableOptions<IDemoTableData>>({
+    columns: [
+      {
+        propertyPath: 'name',
+        columnLabel: 'Name',
+        cell: (row) => row.name,
       },
-      getRowHeight: (row) => {
-        return row.numberArray.length * 50 || 50;
+      {
+        propertyPath: 'numberArray',
+        columnLabel: 'Number Array',
+        cell: (row) => row.numberArray.join('\n'),
       },
-    })
-  );
+    ],
+    data: this.data,
+
+    trackBy: (row) => row.id,
+    filterPredicate: (row, filter) => {
+      return row.id.toString().includes(filter);
+    },
+    getRowHeight: (row) => {
+      return row.numberArray.length * 50 || 50;
+    },
+  });
   //#endregion
 
   constructor() {
@@ -190,10 +182,10 @@ interface IDemoTableData {
   //#endregion
 }
 
-interface IDemoTableFilterControls {
-  name: FormControl<string | null>;
-}
-type IDemoTableFilterFormGroup = FormGroup<IDemoTableFilterControls>;
+// interface IDemoTableFilterControls {
+//   name: FormControl<string | null>;
+// }
+// type IDemoTableFilterFormGroup = FormGroup<IDemoTableFilterControls>;
 
 //#region Helper Functions
 function randomNumber(i: number) {
